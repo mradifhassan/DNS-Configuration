@@ -81,7 +81,6 @@ sudo tee -a /etc/hosts > /dev/null << BLOCK
 0.0.0.0 snapchat.com www.snapchat.com
 0.0.0.0 twitter.com x.com www.twitter.com
 0.0.0.0 reddit.com www.reddit.com
-0.0.0.0 youtube.com www.youtube.com
 
 # VPN & Proxy Services (Bypass Prevention)
 0.0.0.0 nordvpn.com protonvpn.com expressvpn.com surfshark.com mullvad.net
