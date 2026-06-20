@@ -17,7 +17,7 @@ This project contains an automated shell script to harden Ubuntu system-wide. It
 
 ## Prerequisites
 * **OS**: Ubuntu 22.04 LTS or Ubuntu 24.04 LTS (or any Debian-based system using `systemd-resolved` and `NetworkManager`).
-* **Privileges**: Root/Sudo access required.
+* **Privileges**: `root`/`sudo` access required.
 
 ---
 
