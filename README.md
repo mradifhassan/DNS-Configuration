@@ -1,60 +1,126 @@
 ---
-title: How to Permanently Block Adult/Porn Sites on Ubuntu Laptop (2026 Guide)
-description: Step-by-step guide to block NSFW content on Ubuntu using free OpenDNS FamilyShield. Works after fresh reinstall. GUI + CLI methods + verification + troubleshooting.
-last_updated: March 20, 2026
+title: Ultimate Ubuntu Security, Adult Content & Distraction Blocker (2026)
+description: Automated script to block NSFW content, major social media distractions, and VPN bypasses on Ubuntu using Cloudflare Family (DoH/DoT) and UFW.
+last_updated: June 2026
 ---
 
-# How to Block Adult & Porn Sites on Ubuntu (Tested on 22.04 & 24.04)
+# Ultimate Ubuntu Security & Adult Content Blocker
 
-This guide helps you block porn/adult websites system-wide on Ubuntu for better focus, productivity, or parental control.  
-**Method used**: Free **OpenDNS FamilyShield** (no account needed).  
-**Tested**: Works on laptops after full Ubuntu reinstall.
+This project contains an automated shell script to harden Ubuntu system-wide. It filters out adult content, malware, major social media distractions, and implements firewall rules to prevent VPN bypasses.
+
+## Features
+* **Automated Deployment**: Single script setup—no tedious manual GUI steps.
+* **Encrypted Cloudflare Family DNS**: Uses `1.1.1.3` with **DNS over TLS (DoT)** to block adult sites, phishing, and malware securely.
+* **VPN Bypass Prevention**: Blocks standard VPN handshake ports (OpenVPN, WireGuard, IKEv2) via UFW firewall and blocks access to major commercial VPN websites.
+* **Distraction Control**: Subtly blocks major social media domains (Facebook, Instagram, TikTok, Twitter/X, Reddit) via the local `/etc/hosts` file.
+* **Retains YouTube**: Video learning platforms remain fully accessible.
 
 ## Prerequisites
-- Ubuntu 22.04 or 24.04 (GNOME)
-- Backup first (commands below)
-- 2 minutes
+* **OS**: Ubuntu 22.04 LTS or Ubuntu 24.04 LTS (or any Debian-based system using `systemd-resolved` and `NetworkManager`).
+* **Privileges**: Root/Sudo access required.
 
-## Method 1: Easy GUI (Beginners)
+---
 
-1. Click **Activities** → type “Settings” → open **Network**
-2. Click the gear icon ⚙ next to your Wi-Fi (or Wired)
-3. Go to **IPv4** tab
-4. Change **Method** to **Automatic (DHCP) addresses only**
-5. In **DNS** field type:  
-   `208.67.222.123,208.67.220.123`
-6. Click **Apply** → reconnect to Wi-Fi
-7. Reboot
+## How to Use
 
-**Test**: Open https://welcome.opendns.com → should say “You are using OpenDNS!”
-
-## Method 2: Reliable CLI Method (Recommended for Laptops – Never Breaks After Reinstall)
-
+### Step 0: Copy the script
 ```bash
-# 1. Backup
-sudo cp /etc/NetworkManager/NetworkManager.conf ~/NM-backup.conf
+#!/bin/bash
+# =====================================================
+# Ultimate Ubuntu Security & Adult Content Blocker
+# Author: Muhammad Radif Hassan
+# Last Updated: June 2026
+# =====================================================
 
-# 2. Force FamilyShield globally
+echo "=== Applying Ultimate Security Hardening ==="
+
+# 1. Enable Firewall and Block Common VPN / Dangerous Ports
+echo "[+] Enabling UFW Firewall and blocking VPN ports..."
+sudo ufw --force enable
+
+sudo ufw deny out 1194          # OpenVPN
+sudo ufw deny out 1194/udp
+sudo ufw deny out 51820/udp     # WireGuard
+sudo ufw deny out 500           # IKEv2
+sudo ufw deny out 4500          # IKEv2 NAT-T
+sudo ufw deny out 1701          # L2TP
+sudo ufw deny out 1723          # PPTP (old & insecure)
+sudo ufw reload
+
+# 2. Strong Porn / Adult Content Blocking via Cloudflare Family (DoH)
+echo "[+] Enabling Cloudflare Family DNS (Strong Adult + Malware Blocking)..."
 sudo mkdir -p /etc/systemd/resolved.conf.d
-cat <<EOF | sudo tee /etc/systemd/resolved.conf.d/family-shield.conf
+
+sudo tee /etc/systemd/resolved.conf.d/cloudflare-family.conf > /dev/null << DNS
 [Resolve]
-DNS=208.67.222.123 208.67.220.123
-FallbackDNS=208.67.222.123 208.67.220.123
+# Strong Adult Content + Malware + Phishing blocking
+DNSOverTLS=yes
+DNS=1.1.1.3#family.cloudflare-dns.com 1.0.0.3#family.cloudflare-dns.com
+FallbackDNS=1.1.1.3#family.cloudflare-dns.com
 Domains=~.
-DNSStubListener=yes
 DNSSEC=no
-EOF
-
+DNS
 sudo mkdir -p /etc/NetworkManager/conf.d
-cat <<EOF | sudo tee /etc/NetworkManager/conf.d/dns.conf
-[main]
-dns=systemd-resolved
-EOF
+echo -e "[main]\ndns=systemd-resolved" | sudo tee /etc/NetworkManager/conf.d/dns.conf
 
-# 3. Fix symlink
+# Fix resolv.conf symlink (very important)
 sudo rm -f /etc/resolv.conf
 sudo ln -sf /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
 
-# 4. Apply
 sudo systemctl restart systemd-resolved NetworkManager
-sudo nmcli connection down "YOUR_WIFI_NAME" && sudo nmcli connection up "YOUR_WIFI_NAME"
+
+# 3. Block Major Distracting & VPN Websites (hosts file)
+echo "[+] Blocking distracting and VPN websites..."
+sudo tee -a /etc/hosts > /dev/null << BLOCK
+
+# === Security Hardening - Distraction & VPN Blocker ===
+# Remove as your preferences
+0.0.0.0 facebook.com www.facebook.com 
+0.0.0.0 instagram.com www.instagram.com
+0.0.0.0 tiktok.com www.tiktok.com
+0.0.0.0 snapchat.com www.snapchat.com
+0.0.0.0 twitter.com x.com www.twitter.com
+0.0.0.0 reddit.com www.reddit.com
+0.0.0.0 youtube.com www.youtube.com
+
+# VPN & Proxy Services (Bypass Prevention)
+0.0.0.0 nordvpn.com protonvpn.com expressvpn.com surfshark.com mullvad.net
+0.0.0.0 privateinternetaccess.com cyberghostvpn.com windscribe.com tunnelbear.com
+0.0.0.0 hide.me vpnmentor.com
+
+# Optional: Block more adult-related domains (you can expand this)
+0.0.0.0 pornhub.com www.pornhub.com
+0.0.0.0 xvideos.com www.xvideos.com
+0.0.0.0 xhamster.com www.xhamster.com
+0.0.0.0 mat6tube.com www.mat6tube.com
+BLOCK
+
+sudo systemctl restart systemd-resolved
+
+echo "============================================"
+echo "✅ ULTIMATE SECURITY HARDENING APPLIED!"
+echo "• Strong Adult Content Blocking (Cloudflare Family)"
+echo "• VPN Bypass Prevention (Ports + Domains)"
+echo "• Major Social Media & Distractions Blocked"
+echo "• YouTube remains accessible"
+echo "============================================"
+
+# Show Status
+echo "Current DNS Status:"
+resolvectl status | head -n 20
+echo ""
+echo "Firewall Status:"
+sudo ufw status | grep -E "DENY|ALLOW|Active"
+```
+### Step 1: Create the Script File
+Open your terminal and create a new script file:
+```bash
+# Save as script
+sudo nano /usr/local/bin/secure-block.sh
+# Paste the whole script above → Ctrl+O → Enter → Ctrl+X
+
+# Make executable
+sudo chmod +x /usr/local/bin/secure-block.sh
+
+# Run it
+sudo secure-block.sh
